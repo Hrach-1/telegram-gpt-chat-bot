@@ -7,3 +7,7 @@ export async function removeFile(path) {
     console.log('removeFile error : ', error.message)
   }
 }
+
+export function checkIsInArray(array, value) {
+  return array.some(item => item === value)
+}

@@ -4,6 +4,7 @@ import {code} from 'telegraf/format'
 import config from 'config'
 import {ogg} from './ogg.js'
 import {openai} from './openai.js'
+import {checkIsInArray} from './utils.js'
 
 const INITIAL_SESSION = {
   messages: []
@@ -26,18 +27,22 @@ bot.command('start', async ctx => {
   try {
     ctx.session = INITIAL_SESSION
     await ctx.reply('Waiting for voice or text message...')
-  } catch {
+  } catch(error) {
     console.error('Start command error : ', error.message)
   }
 })
 
 bot.on(message('voice'), async ctx => {
+  const isAllowedUser = checkIsInArray(config.get('ALLOWED_USERS'), ctx.message.from.username)
+  if (!isAllowedUser) return
+
   ctx.session ??= INITIAL_SESSION
 
   try {
     await ctx.reply(code('Waiting for server response...'))
     const link = await ctx.telegram.getFileLink(ctx.message.voice.file_id)
     const userId = String(ctx.message.from.id)
+    console.log('message : ', ctx.message)
     console.log(link.href)
     const oggPath = await ogg.create(link.href, userId)
     const mp3Path = await ogg.toMp3(oggPath, userId)
@@ -60,6 +65,9 @@ bot.on(message('voice'), async ctx => {
 })
 
 bot.on(message('text'), async ctx => {
+  const isAllowedUser = checkIsInArray(config.get('ALLOWED_USERS'), ctx.message.from.username)
+  if (!isAllowedUser) return
+
   ctx.session ??= INITIAL_SESSION
 
   try {
