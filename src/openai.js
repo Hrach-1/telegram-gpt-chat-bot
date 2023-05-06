@@ -9,6 +9,11 @@ class OpenAI {
     SYSTEM: 'system'
   }
 
+  gptVersions = {
+    3: 'gpt-3.5-turbo',
+    4: 'gpt-4'
+  }
+
   constructor(apiKey) {
     const configuration = new Configuration({
       apiKey
@@ -16,10 +21,10 @@ class OpenAI {
     this.openai = new OpenAIApi(configuration)
   }
 
-  async chat(messages) {
+  async chat(messages, gptVersion = 3) {
     try {
       const response = await this.openai.createChatCompletion({
-        model: 'gpt-3.5-turbo',
+        model: this.gptVersions[gptVersion],
         messages
       })
 
@@ -30,7 +35,6 @@ class OpenAI {
   }
 
   async transcription(filepath) {
-    console.log('filepath : ', filepath)
     try {
       const response = await this.openai.createTranscription(
         createReadStream(filepath),

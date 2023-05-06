@@ -16,7 +16,11 @@ bot.use(session())
 
 bot.command('new', async ctx => {
   try {
-    ctx.session = INITIAL_SESSION
+    const session = ctx.session
+    ctx.session = {
+      ...session,
+      ...INITIAL_SESSION
+    }
     await ctx.reply('Waiting for voice or text message...')
   } catch (error) {
     console.error('New command error : ', error.message)
@@ -25,10 +29,37 @@ bot.command('new', async ctx => {
 
 bot.command('start', async ctx => {
   try {
-    ctx.session = INITIAL_SESSION
+    ctx.session = {
+      ...INITIAL_SESSION,
+      gptVersion: 3
+    }
     await ctx.reply('Waiting for voice or text message...')
-  } catch(error) {
+  } catch (error) {
     console.error('Start command error : ', error.message)
+  }
+})
+
+bot.command('gpt3', async ctx => {
+  try {
+    ctx.session = {
+      ...INITIAL_SESSION,
+      gptVersion: 3
+    }
+    await ctx.reply('GPT-3 language generation selected. Let\'s chat!')
+  } catch (error) {
+    console.error('gpt3 command error : ', error.message)
+  }
+})
+
+bot.command('gpt4', async ctx => {
+  try {
+    ctx.session = {
+      ...INITIAL_SESSION,
+      gptVersion: 4
+    }
+    await ctx.reply('GPT-4 language generation selected. Let\'s chat!')
+  } catch (error) {
+    console.error('gpt4 command error : ', error.message)
   }
 })
 
@@ -42,8 +73,6 @@ bot.on(message('voice'), async ctx => {
     await ctx.reply(code('Waiting for server response...'))
     const link = await ctx.telegram.getFileLink(ctx.message.voice.file_id)
     const userId = String(ctx.message.from.id)
-    console.log('message : ', ctx.message)
-    console.log(link.href)
     const oggPath = await ogg.create(link.href, userId)
     const mp3Path = await ogg.toMp3(oggPath, userId)
 
@@ -51,7 +80,7 @@ bot.on(message('voice'), async ctx => {
     await ctx.reply(code('Text : ' + text))
 
     ctx.session.messages.push({role: openai.roles.USER, content: text})
-    const response = await openai.chat(ctx.session.messages)
+    const response = await openai.chat(ctx.session.messages, ctx.session.gptVersion)
 
     ctx.session.messages.push({
       role: openai.roles.ASSISTANT,
@@ -76,7 +105,7 @@ bot.on(message('text'), async ctx => {
       role: openai.roles.USER,
       content: ctx.message.text
     })
-    const response = await openai.chat(ctx.session.messages)
+    const response = await openai.chat(ctx.session.messages, ctx.session.gptVersion)
 
     ctx.session.messages.push({
       role: openai.roles.ASSISTANT,
@@ -87,10 +116,6 @@ bot.on(message('text'), async ctx => {
   } catch (error) {
     console.error('Voice message error : ', error.message)
   }
-})
-
-bot.command('start', async ctx => {
-  await ctx.reply(JSON.stringify(ctx.message, null, 2))
 })
 
 bot.launch()
